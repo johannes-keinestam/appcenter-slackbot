@@ -113,7 +113,7 @@ async function _getTotalUsers(app, version) {
 }
 
 async function _getCrashGroupCount(app, version, build) {
-    const crashGroups = [];
+    let crashGroups = [];
     let url = `${apiUrl(app)}/errors/errorGroups?version=${version}&app_build=${build}&start=${encodeURIComponent(maxDaysAgo().toISOString())}`;
     while (url) {
         const response = JSON.parse(await request.get(url, requestOptions()));
