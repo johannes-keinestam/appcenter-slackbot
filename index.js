@@ -1,8 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const request = require('request-promise-native');
-const { json } = require('body-parser');
-var versionCompare = require("node-version-compare");
+const versionCompare = require("node-version-compare");
 
 const apiToken = process.env.ApiToken;
 const appUsername = process.env.AppUsername;
