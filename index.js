@@ -19,6 +19,10 @@ function yesterday() {
     return new Date(Date.now() - 24 * 60 * 60 * 1000);
 }
 
+function maxDaysAgo() {
+    return new Date(Date.now() - 89 * 24 * 60 * 60 * 1000); // AppCenter API supports max 90 days ago. Do 89 to be safe.
+}
+
 function apiUrl(app) {
     return `${baseUrl}/apps/${appUsername}/${app}`;
 }
@@ -57,18 +61,18 @@ async function getCrashAnalytics(version, droidBuild, iOSBuild) {
 }
 
 async function _getStatsString(app, version, build) {
-    const maxDaysAgo = new Date(Date.now() - 89 * 24 * 60 * 60 * 1000); // AppCenter API supports max 90 days ago. Do 89 to be safe.
-
     const totalUsers = await _getTotalUsers(app, version);
-    const statsSinceLaunch = await _getCrashCount(maxDaysAgo, app, version, build);
+    const statsSinceLaunch = await _getCrashCount(maxDaysAgo(), app, version, build);
     const statsSinceYesterday = await _getCrashCount(yesterday(), app, version, build);
     const crashesSinceLaunch = statsSinceLaunch[0] + statsSinceLaunch[1];
     const crashesSinceYesterday = statsSinceYesterday[0] + statsSinceYesterday[1];
 
-    const affectedUsers = await _getAffectedUsers(maxDaysAgo, app, version, build);
+    const crashGroupsSinceLaunch = await _getCrashGroupCount(app, version, build);
+
+    const affectedUsers = await _getAffectedUsers(maxDaysAgo(), app, version, build);
     const percentageAffectedUsers = ((affectedUsers / totalUsers) * 100).toFixed(1);
 
-    return `${crashesSinceLaunch} crashes affecting ${percentageAffectedUsers}% of users (${affectedUsers} of ${totalUsers}). ${crashesSinceYesterday} crashes in last 24h.`;
+    return `${crashesSinceLaunch} crashes (${crashGroupsSinceLaunch} groups) affecting ${percentageAffectedUsers}% of users (${affectedUsers} of ${totalUsers}). ${crashesSinceYesterday} crashes in last 24h.`;
 }
 
 async function _getLatestAppBuild(app, version) {
@@ -106,6 +110,24 @@ async function _getTotalUsers(app, version) {
     const url = `${apiUrl(app)}/analytics/versions/?start=${encodeURIComponent(yesterday().toISOString())}&versions=${version}`;
     const response = JSON.parse(await request.get(url, requestOptions()));
     return response.total;
+}
+
+async function _getCrashGroupCount(app, version, build) {
+    const crashGroups = [];
+    let url = `${apiUrl(app)}/errors/errorGroups?version=${version}&app_build=${build}&start=${encodeURIComponent(maxDaysAgo().toISOString())}`;
+    while (url) {
+        const response = JSON.parse(await request.get(url, requestOptions()));
+        crashGroups = crashGroups.concat(response.errorGroups);
+
+        // Handle paginated results
+        if (response.nextLink) {
+            // If the URL is relative, prefix it with the AppCenter domain.
+            url = response.nextLink.startsWith("http") ? response.nextLink : "https://appcenter.ms" + response.nextLink;
+        } else {
+            url = null;
+        }
+    }
+    return crashGroups.length;
 }
 
 async function slackRespondAsync(req, result) {
