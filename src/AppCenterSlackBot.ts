@@ -43,7 +43,7 @@ export default class AppCenterSlackBot extends AsynchronousSlackBot {
         if (!this._iOSBuildVersion) {
             this._iOSBuildVersion = await api.getLatestAppBuild(apps.iOS as string, this._appVersion as string) as string;
         }
-        if (!this._droidBuildVersion || !this._iOSBuildVersion) {
+        if (!this._droidBuildVersion && !this._iOSBuildVersion) {
             throw new Error(`Could not determine latest builds for version ${this._appVersion}. Try again, or specify them explicitly.`);
         }
 
@@ -55,13 +55,21 @@ export default class AppCenterSlackBot extends AsynchronousSlackBot {
         try {
             let result = "";
 
-            const androidAppName = apps.Android as string;
-            const clickableLinkAndroid = Helpers.getSlackLink(this._crashUrl(androidAppName, version, droidBuild), droidBuild);
-            result += `Android (${clickableLinkAndroid}): ${await this._getStatsString(api, androidAppName, version, droidBuild)}\n`;
+            if (droidBuild) {
+                const androidAppName = apps.Android as string;
+                const clickableLinkAndroid = Helpers.getSlackLink(this._crashUrl(androidAppName, version, droidBuild), droidBuild);
+                result += `Android (${clickableLinkAndroid}): ${await this._getStatsString(api, androidAppName, version, droidBuild)}\n`;
+            } else {
+                result += `Android: Found no build matching app version ${version}.\n`;
+            }
 
-            const iOSAppName = apps.iOS as string;
-            const clickableLinkiOS = Helpers.getSlackLink(this._crashUrl(iOSAppName, version, iOSBuild), iOSBuild);
-            result += `iOS (${clickableLinkiOS}): ${await this._getStatsString(api, iOSAppName, version, iOSBuild)}`;
+            if (iOSBuild) {
+                const iOSAppName = apps.iOS as string;
+                const clickableLinkiOS = Helpers.getSlackLink(this._crashUrl(iOSAppName, version, iOSBuild), iOSBuild);
+                result += `iOS (${clickableLinkiOS}): ${await this._getStatsString(api, iOSAppName, version, iOSBuild)}`;
+            } else {
+                result += `iOS: Found no build matching app version ${version}.`;
+            }
 
             return result;
         }
