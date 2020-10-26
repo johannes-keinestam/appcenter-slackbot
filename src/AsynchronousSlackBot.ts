@@ -29,9 +29,13 @@ export default abstract class AsynchronousSlackBot {
             response = await this._getResponse();
         }
         catch (processingError) {
-            return res.send(processingError.message);
+            return await this._sendAsynchronousSlackResponse(req.body['response_url'], processingError.message);
         }
 
+        await this._sendAsynchronousSlackResponse(req.body['response_url'], response);
+    }
+
+    private async _sendAsynchronousSlackResponse(responseUrl: string, response: string) {
         const requestOptions = {
             headers: {
                 'content-type': 'application/json',
@@ -41,7 +45,7 @@ export default abstract class AsynchronousSlackBot {
                 text: response,
             }),
         };
-        await request.post(req.body['response_url'], requestOptions);
+        await request.post(responseUrl, requestOptions);
     }
 
 
