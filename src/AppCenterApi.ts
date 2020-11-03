@@ -20,8 +20,8 @@ export default class AppCenterApi {
         return appBuilds.length > 0 ? appBuilds[0] : null;
     }
 
-    public async getAffectedUsers(launchDate: Date, app: string, version: string, build: string): Promise<number> {
-        const url = `${this._apiUrl(app)}/errors/errorGroups?version=${version}&app_build=${build}&start=${encodeURIComponent(launchDate.toISOString())}&errorType=all&$orderby=devices%20desc&$top=30`;
+    public async getAffectedUsers(sinceDate: Date, app: string, version: string, build: string): Promise<number> {
+        const url = `${this._apiUrl(app)}/errors/errorGroups?version=${version}&app_build=${build}&start=${encodeURIComponent(sinceDate.toISOString())}&errorType=all&$orderby=devices%20desc&$top=30`;
         const response = JSON.parse(await request.get(url, this._requestOptions));
 
         let affectedUsers = 0;
@@ -43,15 +43,15 @@ export default class AppCenterApi {
         return [crashCount, errorCount];
     }
 
-    public async getTotalUsers(app: string, version: string): Promise<number> {
-        const url = `${this._apiUrl(app)}/analytics/versions/?start=${encodeURIComponent(Helpers.yesterday.toISOString())}&versions=${version}`;
+    public async getTotalUsers(sinceDate: Date, app: string, version: string): Promise<number> {
+        const url = `${this._apiUrl(app)}/analytics/versions/?start=${encodeURIComponent(sinceDate.toISOString())}&versions=${version}`;
         const response = JSON.parse(await request.get(url, this._requestOptions));
         return response.total;
     }
 
-    public async getCrashGroupCount(app: string, version: string, build: string): Promise<number> {
+    public async getCrashGroupCount(sinceDate: Date, app: string, version: string, build: string): Promise<number> {
         let crashGroups: object[] = [];
-        let url = `${this._apiUrl(app)}/errors/errorGroups?version=${version}&app_build=${build}&start=${encodeURIComponent(Helpers.maxDaysAgo.toISOString())}`;
+        let url = `${this._apiUrl(app)}/errors/errorGroups?version=${version}&app_build=${build}&start=${encodeURIComponent(sinceDate.toISOString())}`;
         while (true) {
             const response = JSON.parse(await request.get(url, this._requestOptions));
             crashGroups = crashGroups.concat(response.errorGroups);

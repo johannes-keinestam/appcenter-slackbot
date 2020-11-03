@@ -80,13 +80,13 @@ export default class AppCenterSlackBot extends AsynchronousSlackBot {
 
 
     private async _getStatsString(api: AppCenterApi, app: string, version: string, build: string) {
-        const totalUsers = await api.getTotalUsers(app, version);
+        const totalUsers = await api.getTotalUsers(Helpers.maxDaysAgo, app, version);
         const statsSinceLaunch = await api.getCrashCount(Helpers.maxDaysAgo, app, version, build);
         const statsSinceYesterday = await api.getCrashCount(Helpers.yesterday, app, version, build);
         const crashesSinceLaunch = statsSinceLaunch[0] + statsSinceLaunch[1];
         const crashesSinceYesterday = statsSinceYesterday[0] + statsSinceYesterday[1];
 
-        const crashGroupsSinceLaunch = await api.getCrashGroupCount(app, version, build);
+        const crashGroupsSinceLaunch = await api.getCrashGroupCount(Helpers.maxDaysAgo, app, version, build);
 
         const affectedUsers = await api.getAffectedUsers(Helpers.maxDaysAgo, app, version, build);
         const percentageAffectedUsers = ((affectedUsers / totalUsers) * 100).toFixed(1);
